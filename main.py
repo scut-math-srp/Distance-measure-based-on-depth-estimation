@@ -5,9 +5,15 @@ from tkinter import messagebox, ttk
 from tkinter.filedialog import askopenfilename
 import matplotlib.pyplot as plt
 import math
+import cv2
+import numpy as np
+import requests
+import os
+import zipfile
 
 from FCRN_master import predict
 from MiDaS_master import run
+from MegaDepth import demo
 
 # 窗口
 window = tk.Toplevel()
@@ -54,11 +60,52 @@ def show_input(file):
 windnd.hook_dropfiles(window, func=show_input)
 
 
+'''输入：下载网址，保存文件路径'''
+
+
+def download_weight(url, path):
+    name = url.split('/')[-1]                   # 获取文件名
+    response = requests.get(url, stream=True)   # 请求链接后保存到变量respone中，设置为流读取（适用于大文件下载）
+    chunk_size = 1024                           # 每次下载数据块大小
+    content_size = int(response.headers['content-length'])  # 下载文件大小
+
+    download_window = tk.Tk()                   # 下载窗口初始化
+    download_window.title('权重下载')
+    label_download = tk.Label(download_window, text='下载进度：')
+    label_download.grid(row=1, column=1)
+    canvas_download = tk.Canvas(download_window, width=600, height=16, bg='white')
+    canvas_download.grid(row=1, column=2)
+    fill_line = canvas_download.create_rectangle(1.5, 1.5, 0, 23, width=0, fill='green')    # 进度条
+    raise_data = 600/(content_size/chunk_size)  # 进度条增量大小
+    with open(path+'/'+str(name), 'wb') as f:   # 将下载的数据写入文件
+        n = 0
+        for chunk in response.iter_content(chunk_size=chunk_size):  # 以1024个字节为一个数据块进行读取
+            if chunk:                           # 如果chunk不为空
+                f.write(chunk)
+                n = n + raise_data
+                canvas_download.coords(fill_line, (0, 0, n, 60))    # 更新进度条
+                download_window.update()
+
+
+'''输入：压缩包路径，解压路径'''
+
+
+def unzip_weight(zip_src, dst_dir):
+    weight_zip = zipfile.ZipFile(zip_src, 'r')
+    for file in weight_zip.namelist():  # 获取压缩包里所有文件
+        weight_zip.extract(file, dst_dir)   # 循环解压文件到指定目录
+
+
 def show_output():
     model = askopenfilename()
-    global filepath, depth, max_dep_dis
+    global filepath, depth, max_dep_dis, save
     if para.get() == 'A':
-        # predict.predict(model_data_path='FCRN_master/NYU_FCRN.ckpt', image_path=filepath)
+        if not os.path.exists('FCRN_master/NYU_FCRN.ckpt.data-00000-of-00001'):  # 如果参数文件不存在
+            messagebox.showinfo('提示', '第一次使用需要下载相关权重文件，点击确定开始下载')
+            download_weight('http://campar.in.tum.de/files/rupprecht/depthpred/NYU_FCRN-checkpoint.zip',
+                            'FCRN_master')
+            unzip_weight('FCRN_master/NYU_FCRN-checkpoint.zip', 'FCRN_master')
+            os.remove('FCRN_master/NYU_FCRN-checkpoint.zip')
         predict.predict(model_data_path=model, image_path=filepath)
 
     elif para.get() == 'B':
@@ -67,6 +114,13 @@ def show_output():
         # depth, image_result = run.new_run(image_in_path, 'MiDaS_master/output', 'MiDaS_master/model.pt')
         depth, image_result = run.new_run(image_in_path, 'MiDaS_master/output', model)
         max_dep_dis = depth.max() - depth.min()
+        plt.imsave('pred.jpg', image_result)
+
+    elif para.get() == 'C':
+        image_in_path = 'MegaDepth/demo_img/demo.jpg'
+        image_in.save(image_in_path)                     # 将图片保存到指定文件夹
+        demo.run()
+        image_result = Image.open('MegaDepth/demo_img/demo1.jpg')
         plt.imsave('pred.jpg', image_result)
 
     else:
@@ -78,6 +132,25 @@ def show_output():
     image = ImageTk.PhotoImage(image_resize)
     canvas_out.create_image(0, 0, anchor='nw', image=image)
     canvas_out.image = image
+    save = True     # 表示可保存生成图片
+    img_range = cv2.imread('pred.jpg', 0)  # 读取图像
+    img_range.resize((image_in.size[0], image_in.size[1]))  # 将图像放缩为输入框内的大小
+    depth = np.copy(img_range)  # 获得灰度值
+
+
+def save_output():
+    if save:
+        filename = filedialog.asksaveasfilename(defaultextension='.jpg',        # 默认文件扩展名
+                                                filetypes=[('JPG', '*.jpg')],   # 设置文件类型下拉菜单里的选项
+                                                initialdir='',                  # 对话框中默认的路径
+                                                initialfile='深度估计',         # 对话框中初始化显示的文件名
+                                                parent=window,
+                                                title='另存为')
+        if filename != '':
+            im = Image.open('pred.jpg')
+            im.save(filename)
+    else:
+        messagebox.showerror('错误', '未生成输出')
 
 
 # 参数部分
@@ -97,6 +170,8 @@ radiobutton1 = tk.Radiobutton(frame_para, text='FCRN', variable=para, value='A')
 radiobutton1.pack(anchor='w')
 radiobutton2 = tk.Radiobutton(frame_para, text='MiDaS', variable=para, value='B')
 radiobutton2.pack(anchor='w')
+radiobutton3 = tk.Radiobutton(frame_para, text='MegaDepth', variable=para, value='C')
+radiobutton3.pack(anchor='w')
 # 焦距输入
 label_focal = tk.Label(master=frame_para, text='焦距/mm')
 label_focal.pack(pady=10)
@@ -105,6 +180,12 @@ entry_focal.pack()
 # “确认”按钮
 button_para = tk.Button(master=frame_para, text='选择参数', command=show_output)
 button_para.pack(pady=20)
+# 按钮框架
+frame_button = tk.Frame(window)
+frame_button.grid(row=3, column=2)
+# “保存”按钮
+button_save = tk.Button(frame_button, text='保存图片', command=save_output)
+button_save.grid(row=2, column=1)
 # 调整系数
 label_plain_alter = tk.Label(master=frame_para, text='平面系数：' + str(alter_plain_para))
 label_plain_alter.pack(pady=0)

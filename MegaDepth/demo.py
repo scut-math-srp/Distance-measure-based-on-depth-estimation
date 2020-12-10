@@ -1,0 +1,62 @@
+import torch
+from torch.autograd import Variable    # autograd自动求导
+import numpy as np
+from MegaDepth.options.train_options import TrainOptions
+from MegaDepth.models.models import create_model
+from skimage import io, img_as_float, img_as_ubyte
+from skimage.transform import resize
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# 全局变量
+img_path = 'MegaDepth/demo_img/demo.jpg'
+input_height = 384
+input_width = 512
+
+
+def test_simple(model):
+    # total_loss = 0
+    # toal_count = 0
+    print()
+    print("============================= TEST ============================")
+    model.switch_to_eval()
+
+    img = io.imread(img_path)
+    img = img_as_float(img)     # img = np.float32(img)/255.0
+    img = resize(img, (input_height, input_width), order=1)
+    input_img = torch.from_numpy(np.transpose(img, (2, 0, 1))).contiguous().float()
+    input_img = input_img.unsqueeze(0)
+
+    input_images = Variable(input_img.to(device))
+    pred_log_depth = model.netG.forward(input_images) 
+    pred_log_depth = torch.squeeze(pred_log_depth)
+    pred_depth = torch.exp(pred_log_depth)
+    '''
+    visualize prediction using inverse depth, so that we don't need sky segmentation 
+    (if you want to use RGB map for visualizationyou have to run semantic segmentation to mask 
+    the sky first since the depth of sky is random from CNN)
+    '''
+    pred_inv_depth = 1/pred_depth
+    pred_inv_depth = pred_inv_depth.data.cpu().numpy()
+    pred_inv_depth = pred_inv_depth/np.amax(pred_inv_depth)
+    # you might also use percentile for better visualization
+
+    # #对灰度图进行着色
+    # color.gray2rgb(pred_inv_depth)
+    # pred_inv_depth=np.uint8(pred_inv_depth*255.0)
+
+    # 保存预测深度图
+    pred_inv_depth = img_as_ubyte(pred_inv_depth)  # float to unit8
+    io.imsave('MegaDepth/demo_img/demo1.jpg', pred_inv_depth)
+
+    # print(pred_inv_depth.shape)
+    # sys.exit()
+
+
+def run():
+    opt = TrainOptions().parse()  # set CUDA_VISIBLE_DEVICES before import torch
+    model = create_model(opt)
+    test_simple(model)
+
+
+print("We are done")

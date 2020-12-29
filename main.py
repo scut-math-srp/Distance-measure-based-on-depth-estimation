@@ -28,22 +28,24 @@ canvas_in.grid(row=2, column=1, rowspan=2)
 # 初始化全局变量
 """image_in：输入图片；   depth：深度图；  rec：点"""
 filepath, image_in, depth, rec_red, line_red, rec_red2 = None, None, None, None, None, None
+"""u, v: 图像像素值"""
+U, V = 0, 0
 """起点横、纵坐标"""
 start_x, start_y = 0, 0
 """调整系数"""
 alter_dep_para = 1
-alter_plain_para = 1
 """距离"""
-text_dis, plain_dis, dep_dis, max_dep_dis = None, None, None, None
+text_dis, dis = None, 0
 """记录序号"""
 record_index = 1
 
 
 def show_input(file):
-    global filepath, image_in
+    global filepath, image_in, U, V
     for item in file:
         filepath = ''.join(item.decode('gbk'))
     image_open = Image.open(filepath)
+    U, V = image_open.size
     image_resize = image_open.resize((width, height))
     image = ImageTk.PhotoImage(image_resize)
     canvas_in.create_image(0, 0, anchor='nw', image=image)
@@ -56,17 +58,17 @@ windnd.hook_dropfiles(window, func=show_input)
 
 def show_output():
     model = askopenfilename()
-    global filepath, depth, max_dep_dis
+    global filepath, depth
     if para.get() == 'A':
         # predict.predict(model_data_path='FCRN_master/NYU_FCRN.ckpt', image_path=filepath)
-        predict.predict(model_data_path=model, image_path=filepath)
+        model = '.'.join(model.split('.')[:-1])
+        depth = predict.predict(model_data_path=model, image_path=filepath)
 
     elif para.get() == 'B':
         image_in_path = 'MiDaS_master/input/' + filepath.split('\\')[-1]  # 将图片保存到MiDas_master/input文件夹
         image_in.save(image_in_path)
         # depth, image_result = run.new_run(image_in_path, 'MiDaS_master/output', 'MiDaS_master/model.pt')
         depth, image_result = run.new_run(image_in_path, 'MiDaS_master/output', model)
-        max_dep_dis = depth.max() - depth.min()
         plt.imsave('pred.jpg', image_result)
 
     else:
@@ -97,55 +99,51 @@ radiobutton1 = tk.Radiobutton(frame_para, text='FCRN', variable=para, value='A')
 radiobutton1.pack(anchor='w')
 radiobutton2 = tk.Radiobutton(frame_para, text='MiDaS', variable=para, value='B')
 radiobutton2.pack(anchor='w')
-# 焦距输入
+# 焦距, dx, dy输入
 label_focal = tk.Label(master=frame_para, text='焦距/mm')
-label_focal.pack(pady=10)
+label_focal.pack(pady=0)
 entry_focal = tk.Entry(master=frame_para, width=10)
-entry_focal.pack()
+entry_focal.insert(tk.END, '4.5')
+entry_focal.bind('<KeyRelease>', lambda event: check_num(entry_focal))
+entry_focal.pack(pady=0)
+label_dx = tk.Label(master=frame_para, text='dx/mm')
+label_dx.pack(pady=0)
+entry_dx = tk.Entry(master=frame_para, width=10)
+entry_dx.insert(tk.END, '36')
+entry_dx.bind('<KeyRelease>', lambda event: check_num(entry_dx))
+entry_dx.pack(pady=0)
+label_dy = tk.Label(master=frame_para, text='dy/mm')
+label_dy.pack(pady=0)
+entry_dy = tk.Entry(master=frame_para, width=10)
+entry_dy.insert(tk.END, '24')
+entry_dy.bind('<KeyRelease>', lambda event: check_num(entry_dy))
+entry_dy.pack(pady=0)
 # “确认”按钮
-button_para = tk.Button(master=frame_para, text='选择参数', command=show_output)
+button_para = tk.Button(master=frame_para, text='估计深度', command=show_output)
 button_para.pack(pady=20)
 # 调整系数
-label_plain_alter = tk.Label(master=frame_para, text='平面系数：' + str(alter_plain_para))
-label_plain_alter.pack(pady=0)
 label_dep_alter = tk.Label(master=frame_para, text='深度系数：' + str(alter_dep_para))
 label_dep_alter.pack(pady=0)
 
 
-def check_num1(b):
+def check_num(entry):
     """检测输入是否为数字"""
-    lst = list(entry_plain_alter.get())
+    lst = list(entry.get())
     for i in range(len(lst)):
         if lst[i] not in ".0123456789":
-            entry_plain_alter.delete(i, i + 1)
+            entry.delete(i, i + 1)
     if lst.count('.') == 2:
-        entry_plain_alter.delete(len(lst) - 1, len(lst))
-
-
-def check_num2(a):
-    """检测输入是否为数字"""
-    lst = list(entry_alter.get())
-    for i in range(len(lst)):
-        if lst[i] not in ".0123456789":
-            entry_alter.delete(i, i + 1)
-    if lst.count('.') == 2:
-        entry_alter.delete(len(lst) - 1, len(lst))
+        entry.delete(len(lst) - 1, len(lst))
 
 
 # 调整框架
 frame_alter = tk.Frame(window)
 frame_alter.grid(row=4, column=2)
 # 调整距离
-label_alter_depth = tk.Label(master=frame_alter, text='调整平面距离为(cm)：')
-label_alter_depth.grid(row=1, column=1)
-entry_plain_alter = tk.Entry(master=frame_alter, width=10)
-entry_plain_alter.bind('<KeyRelease>', check_num1)
-entry_plain_alter.grid(row=1, column=2)
-
-label_alter_depth = tk.Label(master=frame_alter, text='调整距离为(cm)：')
+label_alter_depth = tk.Label(master=frame_alter, text='调整距离为(mm)：')
 label_alter_depth.grid(row=3, column=1)
 entry_alter = tk.Entry(master=frame_alter, width=10)
-entry_alter.bind('<KeyRelease>', check_num2)
+entry_alter.bind('<KeyRelease>', lambda event: check_num(entry_alter))
 entry_alter.grid(row=3, column=2)
 
 # 输出部分
@@ -245,7 +243,7 @@ def move(event):
         text_y = (start_y + event.y) // 2 - 5
         str_dis = get_dis(x1, y1, x2, y2)
         text_dis = canvas_in.create_text(text_x, text_y, text=str_dis, fill='red',
-                                         font=('Helvetica', '20', 'bold'))     # 显示距离
+                                         font=('Helvetica', '20', 'bold'))  # 显示距离
     else:
         return
     return
@@ -269,53 +267,52 @@ def release(event):
     if depth is not None:
         str_dis = get_dis(x1, y1, x2, y2)
         tree_view.insert('', 0, values=(str(record_index), '(' + str(x1) + ', ' + str(y1) + ')', '(' + str(x2)
-                                                   + ', ' + str(y2) + ')', str_dis))
+                                        + ', ' + str(y2) + ')', str_dis))
         record_index += 1
     else:
         return
 
 
-def get_dis(x1, y1, x2, y2):
+def get_dis(u1, v1, u2, v2):
     """计算距离"""
-    global alter_dep_para, alter_plain_para, plain_dis, dep_dis
-    plain_dis = (x1 - x2)**2 + (y1 - y2)**2
-    dep_dis = abs(depth[y2, x2] - depth[y1, x1])
-    dis = math.sqrt(plain_dis * alter_plain_para + dep_dis * alter_dep_para)   # 平面距离乘参数 + 深度差乘参数
-    if dis < 100:
-        str_dis = str(round(dis, 2)) + 'cm'
+    """u, v为像素坐标下的值"""
+    global alter_dep_para, depth, U, V, dis
+    dx, dy = float(entry_dx.get()) / U, float(entry_dy.get()) / V
+    f = float(entry_focal.get())
+    if depth is not None and dx and dy and f:
+        u0, v0 = 0.5 * U, 0.5 * V
+        z1 = depth[v1, u1]
+        z2 = depth[v2, u2]
+        x1 = ((u1 - u0) * dx * z1) / f
+        y1 = ((v1 - v0) * dy * z1) / f
+        x2 = ((u2 - u0) * dx * z2) / f
+        y2 = ((v2 - v0) * dy * z2) / f
+        dis = math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2 + (z1 - z2) ** 2) * alter_dep_para
+        # if dis < 100:
+        #     str_dis = str(round(dis / 10, 2)) + 'cm'
+        # else:
+        #     str_dis = str(round(dis / 1000, 2)) + 'm'
+        str_dis = str(round(dis, 2)) + 'mm'
+        return str_dis
+
     else:
-        str_dis = str(round(dis / 100, 2)) + 'm'
-
-    return str_dis
-
-
-def alter_plain_dis():
-    """修改平面距离"""
-    global alter_plain_para, plain_dis, dep_dis, max_dep_dis
-    get_plain_dis = entry_plain_alter.get()
-    if get_plain_dis and plain_dis:
-        get_plain_dis = float(get_plain_dis)
-        if math.sqrt(dep_dis) / max_dep_dis < 0.02:
-            alter_plain_para = (get_plain_dis**2) / plain_dis
-            label_plain_alter.config(text='平面系数：' + str(alter_plain_para))
-        else:
-            messagebox.showwarning('限制', '请选择同一平面上的两点进行调整')
+        return
 
 
 def alter_dis():
     """修改距离"""
-    global alter_dep_para, alter_plain_para, plain_dis, dep_dis
-    get_real_dis = entry_alter.get()
-    if get_real_dis and dep_dis:
-        get_real_dis = float(get_real_dis)
-        alter_dep_para = max((get_real_dis**2 - plain_dis * alter_plain_para) / dep_dis, 0)
+    global alter_dep_para, dis
+    value = entry_alter.get()
+    if dis and value:
+        real_dis = float(value)
+        alter_dep_para = real_dis / dis
         label_dep_alter.config(text='深度系数：' + str(alter_dep_para))
+    else:
+        return
 
 
 # 测距部分
 # 调整距离按钮
-button_para = tk.Button(master=frame_alter, text='确认调整', command=alter_plain_dis)
-button_para.grid(row=2, column=2)
 button_para = tk.Button(master=frame_alter, text='确认调整', command=alter_dis)
 button_para.grid(row=4, column=2)
 
@@ -323,20 +320,20 @@ button_para.grid(row=4, column=2)
 record_frame = tk.Frame(window)
 record_frame.grid(row=5, column=1, columnspan=3)
 sbar = tk.Scrollbar(record_frame)
-tree_view = ttk.Treeview(record_frame, height=6)
+tree_view = ttk.Treeview(record_frame, height=6, show='headings')
 sbar.pack(side=tk.RIGHT, fill=tk.Y)
 tree_view.pack(pady=10, side=tk.LEFT, fill=tk.Y)
 sbar.config(command=tree_view.yview)
 tree_view.config(yscrollcommand=sbar.set)
 
 # 数据列的定义
-tree_view["columns"] = ("#0", "one", "two", "three")
-tree_view.column("#0", width=50, minwidth=50, stretch=tk.NO)
+tree_view["columns"] = ("zero", "one", "two", "three")
+tree_view.column("zero", width=50, minwidth=50, stretch=tk.NO)
 tree_view.column("one", width=200, minwidth=200, stretch=tk.NO)
 tree_view.column("two", width=200, minwidth=200, stretch=tk.NO)
 tree_view.column("three", width=150, minwidth=150, stretch=tk.NO)
 
-tree_view.heading("#0", text="序号", anchor='center')
+tree_view.heading("zero", text="序号", anchor='center')
 tree_view.heading("one", text="第一点坐标", anchor='center')
 tree_view.heading("two", text="第二点坐标", anchor='center')
 tree_view.heading("three", text="距离", anchor='center')

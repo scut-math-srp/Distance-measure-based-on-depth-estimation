@@ -3,12 +3,12 @@
 import os
 import glob
 import torch
-from MiDaS_master import utils
+from MiDaS import utils
 import cv2
 import numpy as np
 from torchvision.transforms import Compose
-from MiDaS_master.models.midas_net import MidasNet
-from MiDaS_master.models.transforms import Resize, NormalizeImage, PrepareForNet
+from MiDaS.models.midas_net import MidasNet
+from MiDaS.models.transforms import Resize, NormalizeImage, PrepareForNet
 
 
 def run(input_path, output_path, model_path):

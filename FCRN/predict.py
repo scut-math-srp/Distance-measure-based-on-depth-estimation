@@ -3,7 +3,7 @@ import tensorflow as tf
 from matplotlib import pyplot as plt
 from PIL import Image
 
-from FCRN_master import models
+from FCRN import models
 
 
 def predict(model_data_path, image_path):

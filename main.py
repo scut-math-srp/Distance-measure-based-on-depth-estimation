@@ -11,8 +11,8 @@ import requests
 import os
 import zipfile
 
-from FCRN_master import predict
-from MiDaS_master import run
+from FCRN import predict
+from MiDaS import run
 from MegaDepth import demo
 
 # 窗口
@@ -100,19 +100,19 @@ def show_output():
     model = askopenfilename()
     global filepath, depth, max_dep_dis, save
     if para.get() == 'A':
-        if not os.path.exists('FCRN_master/NYU_FCRN.ckpt.data-00000-of-00001'):  # 如果参数文件不存在
+        if not os.path.exists('FCRN/NYU_FCRN.ckpt.data-00000-of-00001'):  # 如果参数文件不存在
             messagebox.showinfo('提示', '第一次使用需要下载相关权重文件，点击确定开始下载')
             download_weight('http://campar.in.tum.de/files/rupprecht/depthpred/NYU_FCRN-checkpoint.zip',
-                            'FCRN_master')
-            unzip_weight('FCRN_master/NYU_FCRN-checkpoint.zip', 'FCRN_master')
-            os.remove('FCRN_master/NYU_FCRN-checkpoint.zip')
+                            'FCRN')
+            unzip_weight('FCRN/NYU_FCRN-checkpoint.zip', 'FCRN')
+            # os.remove('FCRN/NYU_FCRN-checkpoint.zip') # Save the file and let the user choose to delete it or not
         predict.predict(model_data_path=model, image_path=filepath)
 
     elif para.get() == 'B':
-        image_in_path = 'MiDaS_master/input/' + filepath.split('\\')[-1]  # 将图片保存到MiDas_master/input文件夹
+        image_in_path = 'MiDaS/input/' + filepath.split('\\')[-1]  # 将图片保存到MiDas/input文件夹
         image_in.save(image_in_path)
-        # depth, image_result = run.new_run(image_in_path, 'MiDaS_master/output', 'MiDaS_master/model.pt')
-        depth, image_result = run.new_run(image_in_path, 'MiDaS_master/output', model)
+        # depth, image_result = run.new_run(image_in_path, 'MiDaS/output', 'MiDaS/model.pt')
+        depth, image_result = run.new_run(image_in_path, 'MiDaS/output', model)
         max_dep_dis = depth.max() - depth.min()
         plt.imsave('pred.jpg', image_result)
 

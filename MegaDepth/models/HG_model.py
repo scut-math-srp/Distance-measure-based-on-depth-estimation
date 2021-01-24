@@ -4,6 +4,16 @@ from .base_model import BaseModel
 from .. import pytorch_DIW_scratch
 from tkinter.filedialog import askopenfilename
 
+# 之前没有
+parameters = None
+
+
+def hgmodel(opt, patameter):
+    global parameters
+    parameters = patameter
+    model = HGModel(opt)
+    return model
+
 
 #建立hourglass作为深度预测模型
 class HGModel(BaseModel):
@@ -15,17 +25,7 @@ class HGModel(BaseModel):
         print("===========================================LOADING Hourglass NETWORK====================================================")
         model = pytorch_DIW_scratch.pytorch_DIW_scratch
         model = torch.nn.parallel.DataParallel(model, device_ids=[0, 1])
-        n = 20
-        mod_1 = ''
-        mod = askopenfilename()
-        i = len(mod) - 1
-        while (1):
-            if mod[i] == '/':
-                n = i
-                break
-            i = i - 1
-        mod_1 = mod[n + 1:len(mod) - 10]
-        model_parameters = self.load_network(model, 'G', mod_1)
+        model_parameters = self.load_network(model, 'G', parameters)
         model.load_state_dict(model_parameters)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.netG = model.to(device)
@@ -155,4 +155,5 @@ class HGModel(BaseModel):
 
     def switch_to_eval(self):
         self.netG.eval()
-
+        
+        

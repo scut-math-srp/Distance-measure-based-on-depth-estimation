@@ -3,8 +3,10 @@ from PIL import Image, ImageTk
 from FCRN import predict
 from MiDaS import run
 from MegaDepth import demo
+from monodepth2 import obtain_depth
 
 import matplotlib.pyplot as plt
+import cv2
 import math
 
 
@@ -34,7 +36,9 @@ def get_depth(algorithm, image_path):
         return
 
     elif algorithm == 'Monodepth2':
-        return
+        depth = obtain_depth.get_depth(image_path)
+        plt.imsave('pred.jpg', depth)
+        return depth
 
 
 def check_num(entry):

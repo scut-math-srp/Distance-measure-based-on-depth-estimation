@@ -2,11 +2,10 @@ from PIL import Image, ImageTk
 
 from FCRN import predict
 from MiDaS import run
-from MegaDepth import demo
+from MegaDepth import n_demo
 from monodepth2 import obtain_depth
 
 import matplotlib.pyplot as plt
-import cv2
 import math
 
 
@@ -32,8 +31,10 @@ def get_depth(algorithm, image_path):
         return depth
 
     elif algorithm == 'MegaDepth':
-        # 函数修改中
-        return
+        parameter = 'MegaDepth/checkpoints/test_local/best_generalization_net_G.pth'
+        depth, _ = n_demo.run(image_path, parameter)
+        plt.imsave('pred.jpg', depth)
+        return depth
 
     elif algorithm == 'Monodepth2':
         depth = obtain_depth.get_depth(image_path)

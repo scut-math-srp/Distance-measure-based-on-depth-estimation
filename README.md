@@ -47,7 +47,7 @@ This is a repository of SRP2020 for bears. Here we make a software to measure th
    
 2. 将深度估计、距离计算、状态栏显示等方法放在utils.py文件中
 
-     > 目前完成**FCRN**，**MiDaS**的深度估计，**MiDas**的距离计算，其他算法将会在后续版本中给出
+     > 目前完成**FCRN**，**MiDaS**，**Monodepth2**的深度估计，**MiDas**，**Monodepth2**的距离计算，其他算法将会在后续版本中给出
      
 
 

@@ -1,11 +1,3 @@
-from PIL import Image, ImageTk
-
-from FCRN import predict
-from MiDaS import run
-from MegaDepth import n_demo
-from monodepth2 import obtain_depth
-
-import matplotlib.pyplot as plt
 import math
 
 
@@ -16,34 +8,26 @@ def get_depth(algorithm, image_path):
     :param image_path:  要估计深度的图片路径
     :return depth:  深度估计矩阵
     """
-
-    image_open = Image.open(image_path)
-
     if algorithm == 'FCRN':
-        depth = predict.predict(model_data_path='FCRN/NYU_FCRN.ckpt', image_path=image_path)
-        return depth
+        from FCRN.obtain_depth import get_depth
 
     elif algorithm == 'MiDaS':
-        image_in_path = 'MiDaS/input' + image_path.split('\\')[-1]  # 将图片保存到MiDas_master/input文件夹
-        image_open.save(image_in_path)
-        depth, image_result = run.new_run(image_in_path, 'MiDaS/output', 'MiDaS/model.pt')
-        plt.imsave('pred.jpg', image_result)
-        return depth
+        from MiDaS.obtain_depth import get_depth
 
     elif algorithm == 'MegaDepth':
-        parameter = 'MegaDepth/checkpoints/test_local/best_generalization_net_G.pth'
-        depth, _ = n_demo.run(image_path, parameter)
-        plt.imsave('pred.jpg', depth)
-        return depth
+        from MegaDepth.obtain_depth import get_depth
 
     elif algorithm == 'Monodepth2':
-        depth = obtain_depth.get_depth(image_path)
-        plt.imsave('pred.jpg', depth)
-        return depth
+        from monodepth2.obtain_depth import get_depth
+
+    depth_map = get_depth(image_path)   # 返回深度矩阵，保存深度图
+    return depth_map
 
 
 def check_num(entry):
-    """检测输入是否为数字"""
+    """
+    检测输入是否为数字
+    """
     lst = list(entry.get())
     for i in range(len(lst)):
         if lst[i] not in ".0123456789":

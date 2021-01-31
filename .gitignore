@@ -9,5 +9,7 @@ pred.jpg
 FCRN/NYU_FCRN-checkpoint.zip
 FCRN/NYU_FCRN.ckpt*
 __pycache__/
+.idea/
+.checkpoints/
 
 # your ignorance

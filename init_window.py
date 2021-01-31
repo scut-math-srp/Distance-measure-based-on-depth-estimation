@@ -3,9 +3,6 @@ from tkinter import ttk, filedialog, messagebox, LabelFrame
 from PIL import Image, ImageTk
 import windnd
 
-from FCRN import predict
-from MiDaS import run
-from MegaDepth import demo
 from utils import get_depth, Line, check_num
 
 
@@ -68,35 +65,41 @@ class Tkwindow:
         初始化工具栏
         """
         self.tool.pack(anchor='w')
-        self.tool_depth.pack(side='left', fill='y')
-        tool_depth_lb1 = tk.Label(self.tool_depth, text='算法')                       # 算法
-        tool_depth_lb1.grid(row=1, column=1)
 
+        # 深度估计框架
+        self.tool_depth.pack(side='left', fill='y')
+
+        tool_depth_lb1 = tk.Label(self.tool_depth, text='算法')   # 算法
+        tool_depth_lb1.grid(row=1, column=1)
         self.tool_depth_cbb1.grid(row=1, column=2)
-        self.tool_depth_cbb1.bind('<<ComboboxSelected>>', self.select_weight)           # 选择算法后自动绑定对应权重
+        self.tool_depth_cbb1.bind('<<ComboboxSelected>>', self.select_weight)   # 选择算法后自动绑定对应权重
         self.tool_depth_cbb1['values'] = ('FCRN', 'MiDaS', 'MegaDepth', 'Monodepth2')
 
-        tool_depth_lb2 = tk.Label(self.tool_depth, text='权重')                      # 权重
+        tool_depth_lb2 = tk.Label(self.tool_depth, text='权重')   # 权重
         tool_depth_lb2.grid(row=2, column=1)
         tool_depth_cbb2 = ttk.Combobox(self.tool_depth, state='readonly')
         tool_depth_cbb2.grid(row=2, column=2)
         tool_depth_bt = tk.Button(self.tool_depth, text='生成', command=self.show_output)
         tool_depth_bt.grid(row=1, column=3, rowspan=2)
 
+        # 距离测量框架
         self.tool_dist.pack(side='left', fill='y')
-        tool_dist_lb1 = tk.Label(self.tool_dist, text='焦距')                      # 焦距
+
+        tool_dist_lb1 = tk.Label(self.tool_dist, text='焦距')     # 焦距
         tool_dist_lb1.grid(row=1, column=1)
         self.tool_dist_etr.grid(row=1, column=2)        # 输入焦距信息
-        self.tool_dist_etr.bind('<KeyRelease>', lambda event: self.line.update_focal(self.tool_dist_etr))    # 检测是否为数字
+        self.tool_dist_etr.bind('<KeyRelease>', lambda event: self.line.update_focal(self.tool_dist_etr))   # 检测是否为数字
         tool_dist_lb10 = tk.Label(self.tool_dist, text='(mm)')
         tool_dist_lb10.grid(row=1, column=3)
-        tool_dist_lb2 = tk.Label(self.tool_dist, text='比例尺')                        # 比例尺
+        tool_dist_lb2 = tk.Label(self.tool_dist, text='比例尺')    # 比例尺
         tool_dist_lb2.grid(row=2, column=1)
-        self.tool_dist_lb3.grid(row=2, column=2)                                  # 比例尺信息
+        self.tool_dist_lb3.grid(row=2, column=2)    # 比例尺信息
         # tool_dist_etr = tk.Entry(self.tool_dist, text='1')
         # tool_dist_etr.grid(row=2, column=2)
 
+        # 距离修正框架
         self.tool_dist_alter.pack(side='left', fill='y')    # 修正距离
+
         tool_dist_alter_lb1 = tk.Label(self.tool_dist_alter, text='修正为')
         tool_dist_alter_lb1.grid(row=1, column=1)
         tool_dist_alter_etr = tk.Entry(self.tool_dist_alter)  # 输入修正后的距离
@@ -108,6 +111,7 @@ class Tkwindow:
                                  command=lambda: self.alter_dis(tool_dist_alter_etr.get()))    # 确认修改按钮
         tool_dist_bt.grid(row=2, column=2)
 
+        # 可视化框架
         tool_visual = tk.LabelFrame(self.tool, text='可视化效果', labelanchor='s')    # 可视化效果
         tool_visual.pack(side='left', fill='y')
         tool_visual_lb = tk.Label(tool_visual, text='颜色')                       # 颜色

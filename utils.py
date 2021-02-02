@@ -3,6 +3,7 @@ import math
 
 def get_depth(algorithm, image_path):
     """
+    根据选择的算法和图片的路径，计算并返回深度值矩阵，保存深度图
 
     :param algorithm:   选择的算法名称
     :param image_path:  要估计深度的图片路径

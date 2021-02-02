@@ -11,7 +11,7 @@ class Tkwindow:
     窗口类，用于生成主窗口，拖动并显示图片，选择算法参数等功能
     """
     def __init__(self, root):
-
+        self.root = root    # 父窗口
         self.width = 600    # 帆布组件的宽度
         self.height = 450   # 帆布组件的高度
         self.input_path = None  # 原图片路径
@@ -53,7 +53,7 @@ class Tkwindow:
         """
         menu_file = tk.Menu(self.menu)  # 文件菜单
         menu_file.add_command(label='打开')  # 打开图片
-        menu_file.add_command(label='保存')  # 保存图片
+        menu_file.add_command(label='保存', command=self.save_output)  # 保存图片
         self.menu.add_cascade(label='文件', menu=menu_file)
 
         menu_help = tk.Menu(self.menu)  # 帮助菜单
@@ -214,6 +214,22 @@ class Tkwindow:
 
         self.show_image('pred.jpg', self.work_output_cv)  # 将生成图加载到深度图帆布中
         self.result = True  # 深度图已生成，可以保存
+        return
+
+    def save_output(self):
+        if self.result:
+            save_path = filedialog.asksaveasfilename(
+                defaultextension='.jpg',    # 默认文件拓展名
+                filetypes=[('JPG', '*.jpg')],   # 设置文件类型选项，目前仅支持jpg格式输出
+                initialdir='',  # 默认路径
+                initialfile='深度估计',     # 默认文件名
+                parent=self.root,    # 父对话框
+                title='保存')     # 对话框标题
+            if save_path != '':  # 取消保存时返回空字符
+                image = Image.open('pred.jpg')
+                image.save(save_path)
+        else:
+            messagebox.showerror('错误', '未生成深度估计图')
         return
 
     def alter_dis(self, str_dis):

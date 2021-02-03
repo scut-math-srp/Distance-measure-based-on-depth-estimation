@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, LabelFrame
 from PIL import Image, ImageTk
 import windnd
+import matplotlib.pyplot as plt
 
 from utils import get_depth, Line, check_num
 
@@ -17,6 +18,31 @@ class Tkwindow:
         self.input_path = None  # 原图片路径
         self.depth = None   # 深度值矩阵
         self.result = False     # 生成深度图状态，若已生成深度图，则为True，可以保存
+        self.cmaps = [
+            ('Perceptually Uniform Sequential', [
+                'viridis', 'plasma', 'inferno', 'magma', 'cividis']),
+            ('Sequential', [
+                'Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
+                'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
+                'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn']),
+            ('Sequential (2)', [
+                'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
+                'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
+                'hot', 'afmhot', 'gist_heat', 'copper']),
+            ('Diverging', [
+                'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
+                'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic']),
+            ('Cyclic', [
+                'twilight', 'twilight_shifted', 'hsv']),
+            ('Qualitative', [
+                'Pastel1', 'Pastel2', 'Paired', 'Accent',
+                'Dark2', 'Set1', 'Set2', 'Set3',
+                'tab10', 'tab20', 'tab20b', 'tab20c']),
+            ('Miscellaneous', [
+                'flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
+                'gnuplot', 'gnuplot2', 'CMRmap', 'cubehelix', 'brg',
+                'gist_rainbow', 'rainbow', 'jet', 'turbo', 'nipy_spectral',
+                'gist_ncar'])]  # 深度图颜色选项
 
         # 用于使用utils中的算法
         self.line = Line(self.width, self.height)
@@ -27,12 +53,18 @@ class Tkwindow:
 
         # 工具栏 tool bar
         self.tool = tk.Frame(root)
+
         self.tool_depth = tk.LabelFrame(self.tool, text='深度估计', labelanchor='s')   # 深度估计方法框架
         self.tool_depth_cbb1 = ttk.Combobox(self.tool_depth, state='readonly')
+
         self.tool_dist = tk.LabelFrame(self.tool, text='距离测量', labelanchor='s')  # 距离测量框架
-        self.tool_dist_etr = tk.Entry(self.tool_dist)                   # 输入焦距
-        self.tool_dist_lb3 = tk.Label(self.tool_dist, text='1')         # 比例尺信息
-        self.tool_dist_alter = tk.LabelFrame(self.tool, text='距离修改', labelanchor='s')  # 修正距离
+        self.tool_dist_etr = tk.Entry(self.tool_dist)   # 输入焦距
+        self.tool_dist_lb3 = tk.Label(self.tool_dist, text='1')     # 比例尺信息
+
+        self.tool_dist_alter = tk.LabelFrame(self.tool, text='距离修改', labelanchor='s')  # 距离修正框架
+
+        self.tool_visual = tk.LabelFrame(self.tool, text='可视化效果', labelanchor='s')  # 可视化效果框架
+        self.tool_visual_cbb = ttk.Combobox(self.tool_visual)
 
         # 工作区域（主界面） working area
         self.work = tk.Frame(root)
@@ -45,7 +77,7 @@ class Tkwindow:
         self.status_message_lb1_dep = tk.Label(self.status, text='')  # A点深度值
         self.status_message_lb2_ord = tk.Label(self.status, text='')  # B点坐标值
         self.status_message_lb2_dep = tk.Label(self.status, text='')  # B点深度值
-        self.status_message_dis = tk.Label(self.status, text='')      # 距离值
+        self.status_message_dis = tk.Label(self.status, text='')    # 距离值
 
     def init_menu(self):
         """
@@ -73,7 +105,7 @@ class Tkwindow:
         tool_depth_lb1.grid(row=1, column=1)
         self.tool_depth_cbb1.grid(row=1, column=2)
         self.tool_depth_cbb1.bind('<<ComboboxSelected>>', self.select_weight)   # 选择算法后自动绑定对应权重
-        self.tool_depth_cbb1['values'] = ('FCRN', 'MiDaS', 'MegaDepth', 'Monodepth2')
+        self.tool_depth_cbb1['values'] = ('FCRN', 'MiDaS', 'MegaDepth', 'monodepth2')
 
         tool_depth_lb2 = tk.Label(self.tool_depth, text='权重')   # 权重
         tool_depth_lb2.grid(row=2, column=1)
@@ -87,7 +119,7 @@ class Tkwindow:
 
         tool_dist_lb1 = tk.Label(self.tool_dist, text='焦距')     # 焦距
         tool_dist_lb1.grid(row=1, column=1)
-        self.tool_dist_etr.grid(row=1, column=2)        # 输入焦距信息
+        self.tool_dist_etr.grid(row=1, column=2)    # 输入焦距信息
         self.tool_dist_etr.bind('<KeyRelease>', lambda event: self.line.update_focal(self.tool_dist_etr))   # 检测是否为数字
         tool_dist_lb10 = tk.Label(self.tool_dist, text='(mm)')
         tool_dist_lb10.grid(row=1, column=3)
@@ -112,12 +144,18 @@ class Tkwindow:
         tool_dist_bt.grid(row=2, column=2)
 
         # 可视化框架
-        tool_visual = tk.LabelFrame(self.tool, text='可视化效果', labelanchor='s')    # 可视化效果
-        tool_visual.pack(side='left', fill='y')
-        tool_visual_lb = tk.Label(tool_visual, text='颜色')                       # 颜色
+        self.tool_visual.pack(side='left', fill='y')
+
+        tool_visual_lb = tk.Label(self.tool_visual, text='颜色')  # 颜色
         tool_visual_lb.grid(row=1, column=1)
-        tool_visual_cbb = ttk.Combobox(tool_visual)
-        tool_visual_cbb.grid(row=1, column=2)
+        self.tool_visual_cbb.grid(row=1, column=2)
+        self.tool_visual_cbb.bind('<<ComboboxSelected>>', self.visual)
+        self.tool_visual_cbb.bind('<Return>', self.visual)
+        cmaps_list = []
+        for _, cmap_list in self.cmaps:
+            cmaps_list = cmaps_list+cmap_list
+        self.tool_visual_cbb['values'] = cmaps_list
+        self.tool_visual_cbb.current(0)
 
     def init_work(self):
         """
@@ -217,6 +255,9 @@ class Tkwindow:
         return
 
     def save_output(self):
+        """
+        保存生成深度图
+        """
         if self.result:
             save_path = filedialog.asksaveasfilename(
                 defaultextension='.jpg',    # 默认文件拓展名
@@ -227,7 +268,7 @@ class Tkwindow:
                 title='保存')     # 对话框标题
             if save_path != '':  # 取消保存时返回空字符
                 image = Image.open('pred.jpg')
-                image.save(save_path)
+                image.save(save_path)   # 一种比较“投机”的保存方式
         else:
             messagebox.showerror('错误', '未生成深度估计图')
         return
@@ -235,11 +276,26 @@ class Tkwindow:
     def alter_dis(self, str_dis):
         """
         修正距离
+
         :param str_dis: 输入框中的输入的距离
         :return:
         """
         dis_para = self.line.alter_dis(str_dis)
         self.tool_dist_lb3.config(text=str(dis_para))
+        return
+
+    def visual(self, *args):
+        """
+        图片可视化效果
+        """
+        if self.result:
+            try:
+                plt.imsave('pred.jpg', self.depth, cmap=self.tool_visual_cbb.get())
+                self.show_image('pred.jpg', self.work_output_cv)
+            except:
+                messagebox.showerror('错误', '指定的颜色映射不存在')
+        else:
+            messagebox.showerror('错误', '未生成深度估计图')
         return
 
     def __call__(self):

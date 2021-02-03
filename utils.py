@@ -18,7 +18,7 @@ def get_depth(algorithm, image_path):
     elif algorithm == 'MegaDepth':
         from MegaDepth.obtain_depth import get_depth
 
-    elif algorithm == 'Monodepth2':
+    elif algorithm == 'monodepth2':
         from monodepth2.obtain_depth import get_depth
 
     depth_map = get_depth(image_path)   # 返回深度矩阵，保存深度图

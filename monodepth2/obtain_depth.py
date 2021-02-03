@@ -61,8 +61,6 @@ def get_depth(image_path):
         # cv2.namedWindow("depth_map", 0)
         # cv2.imshow("depth_map", depth_map)
 
-        plt.imsave('pred.jpg', depth_map)
-
         return depth_map
 
 

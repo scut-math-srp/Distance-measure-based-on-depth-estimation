@@ -1,5 +1,6 @@
 import math
 
+import FCRN, MiDaS, MegaDepth, monodepth2
 
 def get_depth(algorithm, image_path):
     """
@@ -11,13 +12,10 @@ def get_depth(algorithm, image_path):
     """
     if algorithm == 'FCRN':
         from FCRN.obtain_depth import get_depth
-
     elif algorithm == 'MiDaS':
         from MiDaS.obtain_depth import get_depth
-
     elif algorithm == 'MegaDepth':
         from MegaDepth.obtain_depth import get_depth
-
     elif algorithm == 'monodepth2':
         from monodepth2.obtain_depth import get_depth
 

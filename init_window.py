@@ -250,6 +250,7 @@ class Tkwindow:
         self.depth = get_depth(self.tool_depth_cbb1.get(), self.input_path)
         self.line.get_depth(self.depth)   # 将深度矩阵传入Line类
 
+        plt.imsave('pred.jpg', self.depth)  # 保存深度图片
         self.show_image('pred.jpg', self.work_output_cv)  # 将生成图加载到深度图帆布中
         self.result = True  # 深度图已生成，可以保存
         return

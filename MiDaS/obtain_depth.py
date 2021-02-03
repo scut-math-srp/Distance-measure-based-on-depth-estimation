@@ -8,31 +8,9 @@ from torchvision.transforms import Compose
 from MiDaS.models.midas_net import MidasNet
 from MiDaS.models.transforms import Resize, NormalizeImage, PrepareForNet
 
-import numpy as np
 from matplotlib import pyplot as plt
 
 model_path = 'MiDaS/model.pt'
-
-
-def write_depth(depth, bits=1):
-    """Write depth map to pfm and png file.
-
-    Args:
-        path (str): filepath without extension
-        depth (array): depth
-    """
-
-    depth_min = depth.min()
-    depth_max = depth.max()
-
-    max_val = (2**(8*bits))-1
-
-    if depth_max - depth_min > np.finfo("float").eps:
-        out = max_val * (depth - depth_min) / (depth_max - depth_min)
-    else:
-        out = 0
-
-    return out
 
 
 def get_depth(input_path):
@@ -40,7 +18,6 @@ def get_depth(input_path):
 
     Args:
         input_path (str): path to input folder
-        model_path (str): path to saved model
     """
     # select device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -88,9 +65,5 @@ def get_depth(input_path):
                 .cpu()
                 .numpy()
         )
-
-    # output
-    out = write_depth(prediction, bits=2)
-    plt.imsave('pred.jpg', out)
 
     return prediction

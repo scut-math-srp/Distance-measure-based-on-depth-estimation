@@ -41,6 +41,4 @@ def get_depth(image_path):
         # Evaluate the network for the given image
         pred = sess.run(net.get_output(), feed_dict={input_node: img})
 
-        plt.imsave('pred.jpg', pred[0, :, :, 0])
-
         return pred[0, :, :, 0]

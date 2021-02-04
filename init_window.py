@@ -84,7 +84,7 @@ class Tkwindow:
         初始化菜单栏
         """
         menu_file = tk.Menu(self.menu)  # 文件菜单
-        menu_file.add_command(label='打开')  # 打开图片
+        menu_file.add_command(label='打开', command=self.open_input)  # 打开图片
         menu_file.add_command(label='保存', command=self.save_output)  # 保存图片
         self.menu.add_cascade(label='文件', menu=menu_file)
 
@@ -172,7 +172,7 @@ class Tkwindow:
         self.work_input_cv.bind("<B1-Motion>", lambda event: self.line.move(event, self))
         self.work_input_cv.bind("<ButtonRelease-1>", lambda event: self.line.release(event, self))
 
-        windnd.hook_dropfiles(self.work_input_cv, func=self.show_input)  # 将拖拽图片与wa_input_cv组件挂钩
+        windnd.hook_dropfiles(self.work_input_cv, func=self.drag_input)  # 将拖拽图片与wa_input_cv组件挂钩
 
         self.work_output_cv.pack(side='right')
 
@@ -209,7 +209,7 @@ class Tkwindow:
         status_message_lb3.pack(side='left')
         self.status_message_dis.pack(side='left')
 
-    def show_input(self, images):
+    def drag_input(self, images):
         """
         将拖拽的图片加载到原图帆布中
 
@@ -218,6 +218,21 @@ class Tkwindow:
         """
         self.input_path = images[0].decode()    # 获取拖拽文件列表中第一个文件的路径（str类型）
         self.show_image(self.input_path, self.work_input_cv)    # 将文件加载到原图帆布中
+        return
+
+    def open_input(self):
+        self.input_path = filedialog.askopenfilename(
+            parent=self.root,   # 父窗口
+            title='打开',     # 对话框标题
+            initialdir='',  # 默认路径
+            initialfile='',     # 默认文件名
+            filetypes=[],     # 设置文件类型选项
+            defaultextension='.jpg',    # 默认文件拓展名
+            multiple=False)
+        try:
+            self.show_image(self.input_path, self.work_input_cv)    # 将文件加载到原图帆布中
+        except:
+            messagebox.showerror('错误', '无法识别的文件格式')
         return
 
     def show_image(self, image, canvas):

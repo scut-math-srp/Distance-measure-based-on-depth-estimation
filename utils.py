@@ -1,7 +1,5 @@
 import math
 
-import FCRN, MiDaS, MegaDepth, monodepth2
-
 def get_depth(algorithm, image_path):
     """
     根据选择的算法和图片的路径，计算并返回深度值矩阵，保存深度图

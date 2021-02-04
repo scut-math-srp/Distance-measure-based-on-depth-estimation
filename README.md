@@ -50,6 +50,24 @@ This is a repository of SRP2020 for bears. Here we make a software to measure th
      > 四种算法的深度估计均已完成，除**FRCN**算法无返回深度矩阵外，其他均已完成距离计算
      
 
+# Distance-measure-based-on-depth-estimation 4.0
+
+## 更新重点
+
+1. 新增
+   + 菜单栏
+     + 打开图片功能
+     + 保存深度图功能
+   + 工具栏
+     + 深度估计——权重显示功能（暂不具备权重选择功能）
+     + 可视化效果——颜色映射
+2. 优化
+   + get_depth函数
+     + 统一对于不同算法的调用模式
+     + 分离保存深度图片功能
+3. 修复
+   + MegaDepth算法找不到权重文件的问题
+
 
 ## References
 [1] Ranftl, René, Katrin Lasinger, David Hafner, Konrad Schindler, and Vladlen Koltun. “Towards Robust Monocular Depth Estimation: Mixing Datasets for Zero-Shot Cross-Dataset Transfer.” ArXiv:1907.01341 [Cs], December 6, 2019. http://arxiv.org/abs/1907.01341.  

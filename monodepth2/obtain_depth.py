@@ -8,6 +8,9 @@ from . import networks
 from .utils import download_model_if_doesnt_exist
 from .layers import disp_to_depth
 
+from matplotlib import pyplot as plt
+
+
 def get_depth(image_path):
         model_name = "mono+stereo_1024x320"
         # DOWNLOAD MODEL
@@ -57,7 +60,9 @@ def get_depth(image_path):
         # plot depth map
         # cv2.namedWindow("depth_map", 0)
         # cv2.imshow("depth_map", depth_map)
+
         return depth_map
+
 
 if __name__ == "__main__":
     image_path = '../data/QQ20210119210629.jpg'

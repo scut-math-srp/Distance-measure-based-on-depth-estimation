@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, LabelFrame
+from tkinter import ttk, filedialog, messagebox
 from PIL import Image, ImageTk
 import windnd
 import matplotlib.pyplot as plt
@@ -18,6 +18,11 @@ class Tkwindow:
         self.input_path = None  # 原图片路径
         self.depth = None   # 深度值矩阵
         self.result = False     # 生成深度图状态，若已生成深度图，则为True，可以保存
+        self.algorithm = {
+            'FCRN': 'NYU_FCRN.ckpt',
+            'MiDaS': 'model.pt',
+            'MegaDepth': 'best_generalization_net_G.pth',
+            'monodepth2': 'mono+stereo_1024x320'}
         self.cmaps = [
             ('Perceptually Uniform Sequential', [
                 'viridis', 'plasma', 'inferno', 'magma', 'cividis']),
@@ -56,6 +61,7 @@ class Tkwindow:
 
         self.tool_depth = tk.LabelFrame(self.tool, text='深度估计', labelanchor='s')   # 深度估计方法框架
         self.tool_depth_cbb1 = ttk.Combobox(self.tool_depth, state='readonly')
+        self.tool_depth_cbb2 = ttk.Combobox(self.tool_depth, state='readonly')
 
         self.tool_dist = tk.LabelFrame(self.tool, text='距离测量', labelanchor='s')  # 距离测量框架
         self.tool_dist_etr = tk.Entry(self.tool_dist)   # 输入焦距
@@ -105,12 +111,11 @@ class Tkwindow:
         tool_depth_lb1.grid(row=1, column=1)
         self.tool_depth_cbb1.grid(row=1, column=2)
         self.tool_depth_cbb1.bind('<<ComboboxSelected>>', self.select_weight)   # 选择算法后自动绑定对应权重
-        self.tool_depth_cbb1['values'] = ('FCRN', 'MiDaS', 'MegaDepth', 'monodepth2')
+        self.tool_depth_cbb1['values'] = list(self.algorithm.keys())
 
         tool_depth_lb2 = tk.Label(self.tool_depth, text='权重')   # 权重
         tool_depth_lb2.grid(row=2, column=1)
-        tool_depth_cbb2 = ttk.Combobox(self.tool_depth, state='readonly')
-        tool_depth_cbb2.grid(row=2, column=2)
+        self.tool_depth_cbb2.grid(row=2, column=2)
         tool_depth_bt = tk.Button(self.tool_depth, text='生成', command=self.show_output)
         tool_depth_bt.grid(row=1, column=3, rowspan=2)
 
@@ -163,7 +168,8 @@ class Tkwindow:
         """
         self.work.pack()
 
-        self.work_input_cv.create_text(self.width / 2, self.height / 2, text='拖拽图片到此处', fill='grey', anchor='center')
+        self.work_input_cv.create_text(self.width / 2, self.height / 2,
+                                       text='拖拽图片到此处', fill='grey', anchor='center')
         self.work_input_cv.pack(side='left')
         self.line.get_canvas(self.work_input_cv)
 
@@ -221,6 +227,9 @@ class Tkwindow:
         return
 
     def open_input(self):
+        """
+        打开图片并加载到帆布中
+        """
         self.input_path = filedialog.askopenfilename(
             parent=self.root,   # 父窗口
             title='打开',     # 对话框标题
@@ -253,7 +262,12 @@ class Tkwindow:
 
         return
 
-    def select_weight(self, event):
+    def select_weight(self, *args):
+        """
+        选择算法后自动绑定对应的权重选项（暂未实现权重选择功能）
+        """
+        self.tool_depth_cbb2['values'] = self.algorithm[self.tool_depth_cbb1.get()]
+        self.tool_depth_cbb2.current(0)  # 设置初始权重选项
         return
 
     def show_output(self):

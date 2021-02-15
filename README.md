@@ -61,7 +61,7 @@ This is a repository of SRP2020 for bears. Here we make a software to measure th
    + 工具栏
      + 深度估计——权重显示功能（暂不具备权重选择功能）
      + 可视化效果——颜色映射
-     + 可视化小姑——图片方向转换功能
+     + 可视化效果——图片方向转换功能
 2. 优化
    + get_depth函数
      + 统一对于不同算法的调用模式

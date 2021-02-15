@@ -22,7 +22,7 @@ class Tkwindow:
             'FCRN': 'NYU_FCRN.ckpt',
             'MiDaS': 'model.pt',
             'MegaDepth': 'best_generalization_net_G.pth',
-            'monodepth2': 'mono+stereo_1024x320'}
+            'monodepth2': 'mono+stereo_1024x320'}    # 算法对应的权重
         self.cmaps = [
             ('Perceptually Uniform Sequential', [
                 'viridis', 'plasma', 'inferno', 'magma', 'cividis']),
@@ -161,6 +161,11 @@ class Tkwindow:
             cmaps_list = cmaps_list+cmap_list
         self.tool_visual_cbb['values'] = cmaps_list
         self.tool_visual_cbb.current(0)
+
+        tool_visual_lb = tk.Label(self.tool_visual, text='方向')  # 方向
+        tool_visual_lb.grid(row=2, column=1)
+        tool_visual_br = tk.Button(self.tool_visual, text='顺时针转动', command=self.br)
+        tool_visual_br.grid(row=2, column=2)
 
     def init_work(self):
         """
@@ -326,6 +331,16 @@ class Tkwindow:
                 messagebox.showerror('错误', '指定的颜色映射不存在')
         else:
             messagebox.showerror('错误', '未生成深度估计图')
+        return
+
+    def br(self):
+        '''
+        对方向错误的图片进行转动
+        '''
+        im = Image.open(self.input_path)
+        out = im.transpose(Image.ROTATE_270)                  # 进行旋转270
+        out.save(self.input_path)
+        self.show_image(self.input_path, self.work_input_cv)    # 将文件加载到原图帆布中
         return
 
     def __call__(self):

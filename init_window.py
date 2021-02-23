@@ -337,10 +337,16 @@ class Tkwindow:
         '''
         对方向错误的图片进行转动
         '''
+        # 工作区左侧
         im = Image.open(self.input_path)
         out = im.transpose(Image.ROTATE_270)                  # 进行旋转270
         out.save(self.input_path)
         self.show_image(self.input_path, self.work_input_cv)    # 将文件加载到原图帆布中
+        # 工作区右侧
+        im = Image.open('pred.jpg')
+        out = im.transpose(Image.ROTATE_270)  # 进行旋转270
+        out.save('pred.jpg')
+        self.show_image('pred.jpg', self.work_output_cv)
         return
 
     def __call__(self):

@@ -15,7 +15,15 @@
      ```
      pip install tensorflow==1.14.0
      ```
-
+      注：若已安装tensorflow 2.0版本，可将FCRN\obtain_depth.py和FCRN\predict.py和FCRN\models\network.py中
+      ```
+      import tensorflow as tf
+      ```
+       改为
+      ```
+      import tensorflow.compat.v1 as tf
+      tf.disable_v2_behavior()
+      ```
    + 安装pytorch
 
      ```
@@ -24,7 +32,24 @@
 
    + 安装其它依赖包
 
-4. 运行`main.py`文件
+4. 下载权重文件，并放置于指定文件夹
+   + 文件：NYU_FCRN.ckpt.data-00000-of-00001 
+   
+     放置于文件夹：Distance-measure-based-on-depth-estimation-master\FCRN
+    
+     下载地址：
+   + 文件：model.pt
+  
+     放置于文件夹：Distance-measure-based-on-depth-estimation-master\MiDaS
+   
+     下载地址：
+     
+   + 文件：best_generalization_net_G.pth
+  
+     放置于文件夹：Distance-measure-based-on-depth-estimation-master\MegaDepth\checkpoints\test_local
+   
+     下载地址：http://www.cs.cornell.edu/projects/megadepth/dataset/models/best_generalization_net_G.pth
+5. 运行`main.py`文件
 
 # 软件使用说明
 
@@ -43,6 +68,8 @@
 4. 可视化效果
 
    在工具栏**可视化效果**框架中的`颜色`下拉栏选择颜色映射方案（可通过鼠标滚轮快速预览）。深度图颜色映射效果会实时显示在工作区右侧。
+   
+   在工具栏**可视化效果**框架中的`方向`栏点击`顺时针转动`可改变图片的方向。旋转后图片及其深度图将显示在工作区。
 
 5. 保存深度估计图
 

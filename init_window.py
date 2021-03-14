@@ -13,18 +13,18 @@ class Tkwindow:
     """
     def __init__(self, root):
         self.root = root    # 父窗口
-        self.root.minsize(1208, 551)    # 最小尺寸限制
         self.width = 600    # 帆布组件的宽度
         self.height = 450   # 帆布组件的高度
         self.input_path = None  # 原图片路径
         self.depth = None   # 深度值矩阵
         self.result = False     # 生成深度图状态，若已生成深度图，则为True，可以保存
         self.resize_id = None
+        self.line = None        # 初始化用于utils计算的类
         self.algorithm = {
             'FCRN': 'NYU_FCRN.ckpt',
             'MiDaS': 'model.pt',
             'MegaDepth': 'best_generalization_net_G.pth',
-            'monodepth2': 'mono+stereo_1024x320'}
+            'monodepth2': 'mono+stereo_1024x320'}    # 算法对应的权重
         self.cmaps = [
             ('Perceptually Uniform Sequential', [
                 'viridis', 'plasma', 'inferno', 'magma', 'cividis']),
@@ -50,9 +50,6 @@ class Tkwindow:
                 'gnuplot', 'gnuplot2', 'CMRmap', 'cubehelix', 'brg',
                 'gist_rainbow', 'rainbow', 'jet', 'turbo', 'nipy_spectral',
                 'gist_ncar'])]  # 深度图颜色选项
-
-        # 用于使用utils中的算法
-        self.line = Line(self.width, self.height)
 
         # 菜单栏 menu bar
         self.menu = tk.Menu(root)
@@ -164,16 +161,20 @@ class Tkwindow:
         self.tool_visual_cbb['values'] = cmaps_list
         self.tool_visual_cbb.current(0)
 
+        tool_visual_lb = tk.Label(self.tool_visual, text='方向')  # 方向
+        tool_visual_lb.grid(row=2, column=1)
+        tool_visual_br = tk.Button(self.tool_visual, text='顺时针转动', command=self.br)
+        tool_visual_br.grid(row=2, column=2)
+
     def init_work(self):
         """
         初始化工作区域
         """
-        self.work.pack(fill='x')
+        self.work.pack()
 
         self.work_input_cv.text = self.work_input_cv.create_text(self.width / 2, self.height / 2,
                                                                  text='拖拽图片到此处', fill='grey', anchor='center')
-        self.work_input_cv.pack(fill='y', side='left')
-        self.line.get_canvas(self.work_input_cv)
+        self.work_input_cv.pack(side='left')
 
         # 点击并移动鼠标， 测量距离
         self.work_input_cv.bind('<Button-1>', lambda event: self.line.click(event, self))
@@ -184,7 +185,7 @@ class Tkwindow:
 
         self.work_output_cv.pack(side='right')
 
-        self.root.bind('<Configure>', self.resize_canvas)   # 窗口属性改变时修改帆布大小
+        self.root.bind('<Configure>', self.resize_canvas)  # 窗口属性改变时修改帆布大小
 
     def init_status_bar(self):
         """
@@ -219,6 +220,33 @@ class Tkwindow:
         status_message_lb3.pack(side='left')
         self.status_message_dis.pack(side='left')
 
+    def resize_canvas(self, *args):
+        try:
+            self.root.after_cancel(self.resize_id)
+        except:
+            pass
+        self.resize_id = self.root.after(500, self.resize_canvas1)
+        return
+
+    def resize_canvas1(self, *args):
+        """
+        拖拽窗口时改变帆布大小
+        """
+        self.width = int((self.root.winfo_width() - 8) / 2)    # 帆布边框默认宽度为2个像素
+        self.height = int((self.root.winfo_height() - 97))
+        if self.width / self.height < 4 / 3:
+            self.height = int(self.width * 3 / 4)
+        else:
+            self.width = int(self.height * 4 / 3)
+        self.work_input_cv.config(width=self.width, height=self.height)
+        self.work_output_cv.config(width=self.width, height=self.height)
+        self.work_input_cv.coords(self.work_input_cv.text, self.width / 2, self.height / 2)
+        if self.input_path:
+            self.show_image(self.input_path, self.work_input_cv)
+        if self.result:
+            self.show_image('pred.jpg', self.work_output_cv)
+        return
+
     def drag_input(self, images):
         """
         将拖拽的图片加载到原图帆布中
@@ -226,9 +254,18 @@ class Tkwindow:
         :param images: 拖拽获得的文件列表
         :return: None
         """
-        self.input_path = images[0].decode()    # 获取拖拽文件列表中第一个文件的路径（str类型）
+        self.input_path = images[0].decode()                    # 获取拖拽文件列表中第一个文件的路径（str类型）
+        self.init_line()                                        # 根据图片更新line
         self.show_image(self.input_path, self.work_input_cv)    # 将文件加载到原图帆布中
         return
+
+    def init_line(self):
+        """更新line"""
+        self.line = Line(self.width, self.height, self.input_path)  # 用于使用utils中的算法
+        self.line.get_canvas(self.work_input_cv)
+        self.tool_dist_etr.delete(0, tk.END)
+        self.tool_dist_etr.insert(0, str(self.line.focal_length))
+        self.tool_dist_lb3.config(text='1')
 
     def open_input(self):
         """
@@ -259,38 +296,11 @@ class Tkwindow:
         image_open = Image.open(image)      # 加载图片
         image_resize = image_open.resize((self.width, self.height))   # 缩放图片
         image_tk = ImageTk.PhotoImage(image_resize)    # 利用PIL包将图片转化tkinter兼容的格式
-        canvas.create_image(0, 0, anchor='nw', image=image_tk, tag=('r', 'r1'))    # 在canvas中显示图像
+        canvas.create_image(0, 0, anchor='nw', image=image_tk)    # 在canvas中显示图像
         canvas.image = image_tk   # 保留对图像对象的引用，使图像持续显示
 
         self.line.get_image_size(image_open)    # 存储图片信息，用于Line类
 
-        return
-
-    def resize_canvas(self, *args):
-        try:
-            self.root.after_cancel(self.resize_id)
-        except:
-            pass
-        self.resize_id = self.root.after(500, self.resize_canvas1)
-        return
-
-    def resize_canvas1(self, *args):
-        """
-        拖拽窗口时改变帆布大小，（若频繁拖动的话show_image函数可能会占用大量运行资源，存在优化的可能）
-        """
-        self.width = int((self.root.winfo_width() - 8) / 2)    # 帆布边框默认宽度为2个像素
-        self.height = int((self.root.winfo_height() - 97))
-        if self.width / self.height < 4 / 3:
-            self.height = int(self.width * 3 / 4)
-        else:
-            self.width = int(self.height * 4 / 3)
-        self.work_input_cv.config(width=self.width, height=self.height)
-        self.work_output_cv.config(width=self.width, height=self.height)
-        self.work_input_cv.coords(self.work_input_cv.text, self.width / 2, self.height / 2)
-        if self.input_path:
-            self.show_image(self.input_path, self.work_input_cv)
-        if self.result:
-            self.show_image('pred.jpg', self.work_output_cv)
         return
 
     def select_weight(self, *args):
@@ -357,6 +367,22 @@ class Tkwindow:
                 messagebox.showerror('错误', '指定的颜色映射不存在')
         else:
             messagebox.showerror('错误', '未生成深度估计图')
+        return
+
+    def br(self):
+        '''
+        对方向错误的图片进行转动
+        '''
+        # 工作区左侧
+        im = Image.open(self.input_path)
+        out = im.transpose(Image.ROTATE_270)                  # 进行旋转270
+        out.save(self.input_path)
+        self.show_image(self.input_path, self.work_input_cv)    # 将文件加载到原图帆布中
+        # 工作区右侧
+        im = Image.open('pred.jpg')
+        out = im.transpose(Image.ROTATE_270)  # 进行旋转270
+        out.save('pred.jpg')
+        self.show_image('pred.jpg', self.work_output_cv)
         return
 
     def __call__(self):

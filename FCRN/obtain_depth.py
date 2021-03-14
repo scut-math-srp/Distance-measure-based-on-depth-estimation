@@ -1,14 +1,19 @@
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 from matplotlib import pyplot as plt
 from PIL import Image
 
+
 from FCRN import models
 
-import os
+model_data_path = 'FCRN/NYU_FCRN.ckpt'
+default_weight_url = ''
 
-model_data_path = os.path.dirname(os.path.abspath(__file__)) + '/NYU_FCRN.ckpt'
-
+def download_weight(url):
+    import wget
+    target_name = model_data_path
+    wget.download(url, target_name)
 
 def get_depth(image_path):
     # Default input size

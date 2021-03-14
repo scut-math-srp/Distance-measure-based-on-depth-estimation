@@ -5,7 +5,9 @@ from PIL import Image
 
 from FCRN import models
 
-model_data_path = 'FCRN/NYU_FCRN.ckpt'
+import os
+
+model_data_path = os.path.dirname(os.path.abspath(__file__)) + '/NYU_FCRN.ckpt'
 
 
 def get_depth(image_path):

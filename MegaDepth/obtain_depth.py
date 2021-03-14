@@ -7,12 +7,11 @@ from skimage import io
 from skimage.transform import resize
 
 import os
-import matplotlib.pyplot as plt
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-parameter = 'MegaDepth/checkpoints/test_local/best_generalization_net_G.pth'
+parameter = os.path.dirname(os.path.abspath(__file__)) + '/checkpoints/test_local/best_generalization_net_G.pth'
 
 input_height = 384
 input_width  = 512

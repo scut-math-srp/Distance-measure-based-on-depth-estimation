@@ -13,11 +13,13 @@ class Tkwindow:
     """
     def __init__(self, root):
         self.root = root    # 父窗口
+        self.root.minsize(1208, 551)    # 最小尺寸限制
         self.width = 600    # 帆布组件的宽度
         self.height = 450   # 帆布组件的高度
         self.input_path = None  # 原图片路径
         self.depth = None   # 深度值矩阵
         self.result = False     # 生成深度图状态，若已生成深度图，则为True，可以保存
+        self.resize_id = None
         self.algorithm = {
             'FCRN': 'NYU_FCRN.ckpt',
             'MiDaS': 'model.pt',
@@ -166,11 +168,11 @@ class Tkwindow:
         """
         初始化工作区域
         """
-        self.work.pack()
+        self.work.pack(fill='x')
 
-        self.work_input_cv.create_text(self.width / 2, self.height / 2,
-                                       text='拖拽图片到此处', fill='grey', anchor='center')
-        self.work_input_cv.pack(side='left')
+        self.work_input_cv.text = self.work_input_cv.create_text(self.width / 2, self.height / 2,
+                                                                 text='拖拽图片到此处', fill='grey', anchor='center')
+        self.work_input_cv.pack(fill='y', side='left')
         self.line.get_canvas(self.work_input_cv)
 
         # 点击并移动鼠标， 测量距离
@@ -181,6 +183,8 @@ class Tkwindow:
         windnd.hook_dropfiles(self.work_input_cv, func=self.drag_input)  # 将拖拽图片与wa_input_cv组件挂钩
 
         self.work_output_cv.pack(side='right')
+
+        self.root.bind('<Configure>', self.resize_canvas)   # 窗口属性改变时修改帆布大小
 
     def init_status_bar(self):
         """
@@ -255,11 +259,38 @@ class Tkwindow:
         image_open = Image.open(image)      # 加载图片
         image_resize = image_open.resize((self.width, self.height))   # 缩放图片
         image_tk = ImageTk.PhotoImage(image_resize)    # 利用PIL包将图片转化tkinter兼容的格式
-        canvas.create_image(0, 0, anchor='nw', image=image_tk)    # 在canvas中显示图像
+        canvas.create_image(0, 0, anchor='nw', image=image_tk, tag=('r', 'r1'))    # 在canvas中显示图像
         canvas.image = image_tk   # 保留对图像对象的引用，使图像持续显示
 
         self.line.get_image_size(image_open)    # 存储图片信息，用于Line类
 
+        return
+
+    def resize_canvas(self, *args):
+        try:
+            self.root.after_cancel(self.resize_id)
+        except:
+            pass
+        self.resize_id = self.root.after(500, self.resize_canvas1)
+        return
+
+    def resize_canvas1(self, *args):
+        """
+        拖拽窗口时改变帆布大小，（若频繁拖动的话show_image函数可能会占用大量运行资源，存在优化的可能）
+        """
+        self.width = int((self.root.winfo_width() - 8) / 2)    # 帆布边框默认宽度为2个像素
+        self.height = int((self.root.winfo_height() - 97))
+        if self.width / self.height < 4 / 3:
+            self.height = int(self.width * 3 / 4)
+        else:
+            self.width = int(self.height * 4 / 3)
+        self.work_input_cv.config(width=self.width, height=self.height)
+        self.work_output_cv.config(width=self.width, height=self.height)
+        self.work_input_cv.coords(self.work_input_cv.text, self.width / 2, self.height / 2)
+        if self.input_path:
+            self.show_image(self.input_path, self.work_input_cv)
+        if self.result:
+            self.show_image('pred.jpg', self.work_output_cv)
         return
 
     def select_weight(self, *args):

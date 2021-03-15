@@ -18,6 +18,7 @@ class Tkwindow:
         self.input_path = None  # 原图片路径
         self.depth = None   # 深度值矩阵
         self.result = False     # 生成深度图状态，若已生成深度图，则为True，可以保存
+        self.line = None        # 初始化用于utils计算的类
         self.algorithm = {
             'FCRN': 'NYU_FCRN.ckpt',
             'MiDaS': 'model.pt',
@@ -48,9 +49,6 @@ class Tkwindow:
                 'gnuplot', 'gnuplot2', 'CMRmap', 'cubehelix', 'brg',
                 'gist_rainbow', 'rainbow', 'jet', 'turbo', 'nipy_spectral',
                 'gist_ncar'])]  # 深度图颜色选项
-
-        # 用于使用utils中的算法
-        self.line = Line(self.width, self.height)
 
         # 菜单栏 menu bar
         self.menu = tk.Menu(root)
@@ -176,7 +174,6 @@ class Tkwindow:
         self.work_input_cv.create_text(self.width / 2, self.height / 2,
                                        text='拖拽图片到此处', fill='grey', anchor='center')
         self.work_input_cv.pack(side='left')
-        self.line.get_canvas(self.work_input_cv)
 
         # 点击并移动鼠标， 测量距离
         self.work_input_cv.bind('<Button-1>', lambda event: self.line.click(event, self))
@@ -227,9 +224,18 @@ class Tkwindow:
         :param images: 拖拽获得的文件列表
         :return: None
         """
-        self.input_path = images[0].decode()    # 获取拖拽文件列表中第一个文件的路径（str类型）
+        self.input_path = images[0].decode()                    # 获取拖拽文件列表中第一个文件的路径（str类型）
+        self.init_line()                                        # 根据图片更新line
         self.show_image(self.input_path, self.work_input_cv)    # 将文件加载到原图帆布中
         return
+
+    def init_line(self):
+        """更新line"""
+        self.line = Line(self.width, self.height, self.input_path)  # 用于使用utils中的算法
+        self.line.get_canvas(self.work_input_cv)
+        self.tool_dist_etr.delete(0, tk.END)
+        self.tool_dist_etr.insert(0, str(self.line.focal_length))
+        self.tool_dist_lb3.config(text='1')
 
     def open_input(self):
         """

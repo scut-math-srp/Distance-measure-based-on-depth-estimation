@@ -1,4 +1,6 @@
 import math
+import utils_focal_length
+
 
 def get_depth(algorithm, image_path):
     """
@@ -33,12 +35,24 @@ def check_num(entry):
         entry.delete(len(lst) - 1, len(lst))
 
 
+def init_focal(image_path):
+    """
+    利用meshroom，检测EXIF并初始化焦距
+    :return: focal_length
+    """
+    try:
+        fl_info = utils_focal_length.focal_length_helper.obtain_exif_exif(image_path)
+        return fl_info[0]
+    except:
+        return 55.0
+
+
 class Line:
     """
     用于选点时的事件及计算
     """
 
-    def __init__(self, width, height):
+    def __init__(self, width, height, image_path):
         """
 
         :param width:  画布canvas宽度
@@ -63,7 +77,7 @@ class Line:
         # 初始化焦距等参数
         self.dx = 36
         self.dy = 24
-        self.focal_length = 4.5
+        self.focal_length = init_focal(image_path)
 
         self.dis_para = 1  # 比例尺参数
         self.dis = 0  # 距离
@@ -74,6 +88,8 @@ class Line:
     def get_image_size(self, image):
         self.image_width = image.size[0]
         self.image_height = image.size[1]
+        self.dx = self.dx / self.image_width
+        self.dy = self.dy / self.image_height
 
     def get_depth(self, depth):
         self.depth = depth

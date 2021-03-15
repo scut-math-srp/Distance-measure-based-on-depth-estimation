@@ -42,7 +42,7 @@
   
      放置于文件夹：Distance-measure-based-on-depth-estimation-master\MiDaS
    
-     下载地址：
+     下载地址：https://drive.google.com/file/d/1zQAV1YODL9uaalPBOZGVGevctCYiY8-l/view?usp=sharing
      
    + 文件：best_generalization_net_G.pth
   

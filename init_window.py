@@ -18,6 +18,7 @@ class Tkwindow:
         self.input_path = None  # 原图片路径
         self.depth = None   # 深度值矩阵
         self.result = False     # 生成深度图状态，若已生成深度图，则为True，可以保存
+        self.resize_id = None
         self.line = None        # 初始化用于utils计算的类
         self.algorithm = {
             'FCRN': 'NYU_FCRN.ckpt',
@@ -171,8 +172,8 @@ class Tkwindow:
         """
         self.work.pack()
 
-        self.work_input_cv.create_text(self.width / 2, self.height / 2,
-                                       text='拖拽图片到此处', fill='grey', anchor='center')
+        self.work_input_cv.text = self.work_input_cv.create_text(self.width / 2, self.height / 2,
+                                                                 text='拖拽图片到此处', fill='grey', anchor='center')
         self.work_input_cv.pack(side='left')
 
         # 点击并移动鼠标， 测量距离
@@ -183,6 +184,8 @@ class Tkwindow:
         windnd.hook_dropfiles(self.work_input_cv, func=self.drag_input)  # 将拖拽图片与wa_input_cv组件挂钩
 
         self.work_output_cv.pack(side='right')
+
+        self.root.bind('<Configure>', self.resize_canvas)  # 窗口属性改变时修改帆布大小
 
     def init_status_bar(self):
         """
@@ -216,6 +219,33 @@ class Tkwindow:
         status_message_lb3 = tk.Label(self.status, text='距离：')  # 距离
         status_message_lb3.pack(side='left')
         self.status_message_dis.pack(side='left')
+
+    def resize_canvas(self, *args):
+        try:
+            self.root.after_cancel(self.resize_id)
+        except:
+            pass
+        self.resize_id = self.root.after(500, self.resize_canvas1)
+        return
+
+    def resize_canvas1(self, *args):
+        """
+        拖拽窗口时改变帆布大小
+        """
+        self.width = int((self.root.winfo_width() - 8) / 2)    # 帆布边框默认宽度为2个像素
+        self.height = int((self.root.winfo_height() - 97))
+        if self.width / self.height < 4 / 3:
+            self.height = int(self.width * 3 / 4)
+        else:
+            self.width = int(self.height * 4 / 3)
+        self.work_input_cv.config(width=self.width, height=self.height)
+        self.work_output_cv.config(width=self.width, height=self.height)
+        self.work_input_cv.coords(self.work_input_cv.text, self.width / 2, self.height / 2)
+        if self.input_path:
+            self.show_image(self.input_path, self.work_input_cv)
+        if self.result:
+            self.show_image('pred.jpg', self.work_output_cv)
+        return
 
     def drag_input(self, images):
         """
@@ -360,4 +390,3 @@ class Tkwindow:
         self.init_toolbar()
         self.init_work()
         self.init_status_bar()
-

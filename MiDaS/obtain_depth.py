@@ -8,9 +8,9 @@ from torchvision.transforms import Compose
 from MiDaS.models.midas_net import MidasNet
 from MiDaS.models.transforms import Resize, NormalizeImage, PrepareForNet
 
-from matplotlib import pyplot as plt
+import os
 
-model_path = 'MiDaS/model.pt'
+model_path = os.path.dirname(os.path.abspath(__file__)) + '\model.pt'
 
 
 def get_depth(input_path):

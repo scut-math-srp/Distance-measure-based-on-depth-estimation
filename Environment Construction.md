@@ -15,15 +15,15 @@
      ```
      pip install tensorflow==1.14.0
      ```
-      注：若已安装tensorflow 2.0版本，可将FCRN\obtain_depth.py和FCRN\predict.py和FCRN\models\network.py中
-      ```
-      import tensorflow as tf
-      ```
-       改为
-      ```
-      import tensorflow.compat.v1 as tf
-      tf.disable_v2_behavior()
-      ```
+      > 注：若已安装tensorflow 2.0版本，可将FCRN\obtain_depth.py和FCRN\predict.py和FCRN\models\network.py中
+      > ```
+      > import tensorflow as tf
+      > ```
+      > 改为
+      > ```
+      > import tensorflow.compat.v1 as tf
+      > tf.disable_v2_behavior()
+      > ```
    + 安装pytorch
 
      ```
